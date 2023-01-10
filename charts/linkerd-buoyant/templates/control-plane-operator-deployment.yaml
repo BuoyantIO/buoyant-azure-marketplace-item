@@ -1,0 +1,116 @@
+{{ if (include "install-operator" .) -}}
+{{ include "check-linkerd" . -}}
+{{ include "check-linkerd-jaeger" . -}}
+{{ $requiresExtended := include "requires-extendedRBAC" . }}
+{{ if and $requiresExtended (not $.Values.controlPlaneOperator.extendedRBAC.enabled) -}}
+  {{- fail "*** To upgrade Linkerd from versions previous to 2.12.0, you need to set controlPlaneOperator.extendedRBAC.enabled=true ***" -}}
+{{ end -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: linkerd-control-plane-operator
+  {{- if eq .Release.Service "Buoyant Cloud" }}
+  namespace: {{.Release.Namespace}}
+  {{- end }}
+  annotations:
+    buoyant.cloud/version: v{{.Chart.Version | replace "+" "_"}}
+  labels:
+    app.kubernetes.io/version: v{{.Chart.Version | replace "+" "_"}}
+    app.kubernetes.io/part-of: buoyant-cloud
+    app.kubernetes.io/component: linkerd-control-plane-operator
+    helm.sh/chart: {{.Chart.Name}}-v{{.Chart.Version | replace "+" "_"}}
+    linkerd.io/extension: buoyant
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/part-of: buoyant-cloud
+      app.kubernetes.io/component: linkerd-control-plane-operator
+  template:
+    metadata:
+      annotations:
+        linkerd.io/inject: disabled
+        {{- with .Values.podAnnotations }}{{ toYaml . | trim | nindent 8 }}{{- end }}
+      labels:
+        app.kubernetes.io/part-of: buoyant-cloud
+        app.kubernetes.io/component: linkerd-control-plane-operator
+        {{- with .Values.podLabels}}{{ toYaml . | trim | nindent 8 }}{{- end }}
+    spec:
+      containers:
+      - args:
+        - controlplane
+        - "-api-addr={{ .Values.api.apiAddress }}"
+        {{- if .Values.controlPlaneOperator.noTLS }}
+        - "-no-tls"
+        {{- end }}
+        - --linkerd-ns={{.Values.linkerd.namespace}}
+        {{- if .Values.controlPlaneOperator.extendedRBAC.enabled }}
+        - --old-helm-secret-ns={{.Values.controlPlaneOperator.extendedRBAC.helmSecretNamespace}}
+        {{- end }}
+        - --old-helm-release-name={{.Values.controlPlaneOperator.helmReleaseName}}
+        {{- if .Values.linkerdJaeger.enabled }}
+        - --linkerd-jaeger-ns={{.Values.linkerdJaeger.namespace}}
+        {{- end }}
+        {{- if .Values.enablePSP }}
+        - --enable-psp
+        {{- end }}
+        - -log-level={{.Values.controlPlaneOperator.logLevel}}
+        env:
+        - name: BUOYANT_CLOUD_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              key: client_id
+              name: buoyant-cloud-org-credentials
+        - name: BUOYANT_CLOUD_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              key: client_secret
+              name: buoyant-cloud-org-credentials
+        - name: LICENSE
+          value: {{.Values.license | default "" | quote}}
+        - name: ENVIRONMENT
+          {{- /* Not exposed in the default values.yaml */}}
+          value: {{.Values.environment | default "prod"}}
+        - name: NS
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        image: "{{ .Values.global.azure.images.agent.registry }}/{{ .Values.global.azure.images.agent.image }}@{{ .Values.global.azure.images.agent.digest }}"
+        name: linkerd-control-plane-operator
+        ports:
+        - name: admin
+          containerPort: 9992
+        livenessProbe:
+          httpGet:
+            path: /ping
+            port: 9992
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 9992
+        volumeMounts:
+        # helm lib cache dir
+        - mountPath: /.cache
+          name: helm-cache
+        # client-go discovery cache
+        - mountPath: /.kube
+          name: discovery-cache
+        securityContext:
+          allowPrivilegeEscalation: false
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsGroup: 65534
+          runAsNonRoot: true
+          runAsUser: 65534
+      securityContext:
+        fsGroup: 65534
+      serviceAccountName: linkerd-control-plane-operator
+      volumes:
+      - name: helm-cache
+        emptyDir: {}
+      - name: discovery-cache
+        emptyDir: {}
+{{ end -}}

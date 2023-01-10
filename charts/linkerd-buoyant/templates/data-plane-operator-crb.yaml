@@ -1,0 +1,18 @@
+{{ if (include "install-operator" .) -}}
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: linkerd-data-plane-operator
+  labels:
+    app.kubernetes.io/part-of: buoyant-cloud
+    app.kubernetes.io/component: linkerd-data-plane-operator
+    helm.sh/chart: {{.Chart.Name}}-v{{.Chart.Version | replace "+" "_"}}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: linkerd-data-plane-operator
+subjects:
+- kind: ServiceAccount
+  name: linkerd-data-plane-operator
+  namespace: {{.Release.Namespace}}
+{{ end -}}

@@ -1,0 +1,27 @@
+{{ if and .Values.linkerdJaeger.enabled (include "install-operator" .) -}}
+# Allows the operator to update resources in the Jaeger namespace
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: linkerd-control-plane-operator-jaeger
+  namespace: {{.Values.linkerdJaeger.namespace}}
+  labels:
+    app.kubernetes.io/part-of: buoyant-cloud
+    app.kubernetes.io/component: linkerd-control-plane-operator
+    helm.sh/chart: {{.Chart.Name}}-v{{.Chart.Version | replace "+" "_"}}
+rules:
+- apiGroups: [""]
+  resources: ["configmaps", "services", "serviceaccounts", "secrets"]
+  verbs: ["patch"]
+- apiGroups: ["apps"]
+  resources: ["deployments"]
+  # 'get' required to retrieve the image tag
+  verbs: ["get", "patch"]
+- apiGroups: ["rbac.authorization.k8s.io"]
+  resources: ["roles", "rolebindings"]
+  verbs: ["patch"]
+- apiGroups: ["policy.linkerd.io"]
+  resources: ["servers", "serverauthorizations"]
+  verbs: ["patch"]
+{{ end -}}
+

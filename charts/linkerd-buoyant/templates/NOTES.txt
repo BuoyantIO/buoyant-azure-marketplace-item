@@ -1,0 +1,91 @@
+Thank you for installing {{ .Chart.Name }}.
+
+Your release is named {{ .Release.Name }}.
+
+To help you manage your Buoyant Cloud agent, you can install the CLI extension
+by running:
+
+  curl -sL https://buoyant.cloud/install | sh
+
+Alternatively, you can download the CLI directly via the linkerd-buoyant
+releases page:
+
+  https://github.com/BuoyantIO/linkerd-buoyant/releases
+
+To make sure everything works as expected, run the following:
+
+  linkerd-buoyant check
+
+Need help? Message us in the #buoyant-cloud Slack channel:
+https://linkerd.slack.com/archives/C01QSTM20BY
+
+Looking for more? Visit https://buoyant.io/cloud/
+{{ $existsOrgCreds := include "exists-org-credentials" . -}}
+{{ $existsOrgCredsSecret := include "exists-org-credentials-secret" . -}}
+{{ if and (not $existsOrgCreds) (not $existsOrgCredsSecret) -}}
+{{/* */}}
+**************************************************************************
+*** Org credentials not found. Please provide api.clientID and         ***
+*** api.clientSecret, or a buoyant-cloud-org-credentials secret in the ***
+*** {{.Release.Namespace}} namespace.                                           ***
+**************************************************************************
+{{ end -}}
+
+{{ if .Values.managed -}}
+
+  {{ if (not (empty (include "install-operator" .))) -}}
+
+    {{ $installedLinkerd := include "installed-linkerd-namespace" . -}}
+
+    {{ if and (not (include "requires-extendedRBAC" .)) .Values.controlPlaneOperator.extendedRBAC.enabled -}}
+      {{ if empty $installedLinkerd -}}
+{{/* */}}
+******************************************************************************
+*** controlPlaneOperator.extendedRBAC.enabled=true is only required if you ***
+*** intend to install Linkerd version 2.11.x or earlier.                   ***
+*** Otherwise please disable to avoid installing unnecessary ClusterRoles! ***
+******************************************************************************
+      {{ else -}}
+{{/* */}}
+***********************************************************************
+*** Your installed Linkerd version is recent enough to avoid having ***
+*** controlPlaneOperator.extendedRBAC.enabled=true.                 ***
+*** Please disable to avoid installing unnecessary ClusterRoles!    ***
+***********************************************************************
+      {{ end -}}
+    {{ end -}}
+
+    {{ if empty $installedLinkerd -}}
+{{/* */}}
+*********************************************************************
+*** Linkerd not detected. Please install Linkerd 2.12.x via Helm: ***
+*** helm install linkerd-crds          --namespace {{.Values.linkerd.namespace}} ...    ***
+*** helm install {{include "linkerd-release-name" . }} --namespace {{.Values.linkerd.namespace}} ...    ***
+*********************************************************************
+    {{ end -}}
+
+  {{ else if (not (empty (include "installed-linkerd-cli" .))) -}}
+{{/* */}}
+*************************************************************************
+*** Linkerd CLI installation detected. Managed Linkerd not installed. ***
+*** To enable managed Linkerd features, uninstall Linkerd, and then   ***
+*** reinstall the agent.                                              ***
+*************************************************************************
+
+  {{ else if (not (empty (include "linkerd-2-9" .))) -}}
+{{/* */}}
+*************************************************************************
+*** Linkerd 2.9 installation detected. Managed Linkerd not installed. ***
+*** To enable managed Linkerd features, uninstall Linkerd, and then   ***
+*** reinstall the agent.                                              ***
+*************************************************************************
+
+  {{ else -}}
+{{/* we should never get here */}}
+**************************************************************************
+*** Unrecognized Linkerd configuration. Managed Linkerd not installed. ***
+**************************************************************************
+
+  {{ end -}} {{/* install-operator */}}
+
+{{ end -}} {{/* .Values.managed */}}

@@ -1,0 +1,40 @@
+{{ if and (include "install-operator" .) .Values.enablePSP -}}
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: buoyant-operator
+  labels:
+    app.kubernetes.io/part-of: buoyant-cloud
+    helm.sh/chart: {{.Chart.Name}}-v{{.Chart.Version | replace "+" "_"}}
+spec:
+  # All of these extra capabilities and privileges are required for
+  # linkerd-init to work, in particular stable-2.11 and previous
+  allowedCapabilities:
+  - NET_ADMIN
+  - NET_RAW
+  allowPrivilegeEscalation: true
+  readOnlyRootFilesystem: true
+  hostNetwork: false
+  hostIPC: false
+  hostPID: false
+  seLinux:
+    rule: RunAsAny
+  runAsUser:
+    # linkerd-init requires root in v2.11.1 and previous
+    rule: RunAsAny
+  supplementalGroups:
+    rule: MustRunAs
+    ranges:
+    - min: 1
+      max: 65535
+  fsGroup:
+    rule: MustRunAs
+    ranges:
+    - min: 1
+      max: 65535
+  volumes:
+  - configMap
+  - projected
+  # required for helm client cache dir
+  - emptyDir
+{{ end -}}

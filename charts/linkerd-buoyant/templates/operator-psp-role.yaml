@@ -1,0 +1,18 @@
+{{ if and (include "install-operator" .) .Values.enablePSP -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: operator-psp
+  {{- if eq .Release.Service "Buoyant Cloud" }}
+  namespace: {{.Release.Namespace}}
+  {{- end }}
+  labels:
+    app.kubernetes.io/part-of: buoyant-cloud
+    helm.sh/chart: {{.Chart.Name}}-v{{.Chart.Version | replace "+" "_"}}
+rules:
+- apiGroups: ['policy', 'extensions']
+  resources: ['podsecuritypolicies']
+  verbs: ['use']
+  resourceNames:
+  - buoyant-operator
+{{ end -}}

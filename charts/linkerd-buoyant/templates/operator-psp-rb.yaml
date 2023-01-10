@@ -1,0 +1,26 @@
+{{ if and (include "install-operator" .) .Values.enablePSP -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: operator-psp
+  {{- if eq .Release.Service "Buoyant Cloud" }}
+  namespace: {{.Release.Namespace}}
+  {{- end }}
+  labels:
+    app.kubernetes.io/part-of: buoyant-cloud
+    helm.sh/chart: {{.Chart.Name}}-v{{.Chart.Version | replace "+" "_"}}
+roleRef:
+  kind: Role
+  name: operator-psp
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+- kind: ServiceAccount
+  name: linkerd-data-plane-operator
+  namespace: {{.Release.Namespace}}
+- kind: ServiceAccount
+  name: buoyant-cloud-agent
+  namespace: {{.Release.Namespace}}
+- kind: ServiceAccount
+  name: linkerd-control-plane-operator
+  namespace: {{.Release.Namespace}}
+{{ end -}}

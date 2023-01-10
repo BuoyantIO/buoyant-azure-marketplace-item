@@ -1,0 +1,39 @@
+{{ if .Values.enablePSP -}}
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: buoyant-operator-namespace-metadata
+  annotations:
+    helm.sh/hook: pre-install
+    helm.sh/hook-weight: "0"
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+  labels:
+    app.kubernetes.io/part-of: buoyant-cloud
+    helm.sh/chart: {{.Chart.Name}}-v{{.Chart.Version | replace "+" "_"}}
+spec:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  hostNetwork: false
+  hostIPC: false
+  hostPID: false
+  seLinux:
+    rule: RunAsAny
+  runAsUser:
+    rule: MustRunAs
+    ranges:
+    - min: 2105
+      max: 2105
+  supplementalGroups:
+    rule: MustRunAs
+    ranges:
+    - min: 2105
+      max: 2105
+  fsGroup:
+    rule: MustRunAs
+    ranges:
+    - min: 2105
+      max: 2105
+  volumes:
+  - projected
+{{ end -}}
+

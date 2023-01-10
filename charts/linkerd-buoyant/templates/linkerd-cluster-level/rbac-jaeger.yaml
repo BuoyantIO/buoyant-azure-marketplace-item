@@ -1,0 +1,41 @@
+{{ if and .Values.linkerdJaeger.enabled (include "install-operator" .) -}}
+{{ $releaseName := include "linkerd-release-name" . -}}
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: linkerd-jaeger-injector
+  annotations:
+    meta.helm.sh/release-name: {{$releaseName}}
+    meta.helm.sh/release-namespace: {{.Values.linkerd.namespace}}
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-weight: "0"
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    linkerd.io/extension: jaeger
+rules:
+- apiGroups: [""]
+  resources: ["namespaces"]
+  verbs: ["get", "list", "watch"]
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: linkerd-jaeger-injector
+  annotations:
+    meta.helm.sh/release-name: {{$releaseName}}
+    meta.helm.sh/release-namespace: {{.Values.linkerd.namespace}}
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-weight: "0"
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    linkerd.io/extension: jaeger
+subjects:
+- kind: ServiceAccount
+  name: jaeger-injector
+  namespace: {{.Values.linkerdJaeger.namespace}}
+  apiGroup: ""
+roleRef:
+  kind: ClusterRole
+  name: linkerd-jaeger-injector
+  apiGroup: rbac.authorization.k8s.io
+{{ end -}}

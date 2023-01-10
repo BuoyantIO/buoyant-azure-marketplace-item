@@ -1,0 +1,47 @@
+{{ if (include "install-operator" .) -}}
+{{ $releaseName := include "linkerd-release-name" . -}}
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: linkerd-{{.Values.linkerd.namespace}}-control-plane
+  annotations:
+    meta.helm.sh/release-name: {{$releaseName}}
+    meta.helm.sh/release-namespace: {{.Values.linkerd.namespace}}
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-weight: "0"
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    linkerd.io/control-plane-ns: {{.Values.linkerd.namespace}}
+spec:
+  allowPrivilegeEscalation: true
+  readOnlyRootFilesystem: true
+  allowedCapabilities:
+  - NET_ADMIN
+  - NET_RAW
+  requiredDropCapabilities:
+  - ALL
+  hostNetwork: false
+  hostIPC: false
+  hostPID: false
+  seLinux:
+    rule: RunAsAny
+  runAsUser:
+    rule: RunAsAny
+  supplementalGroups:
+    rule: MustRunAs
+    ranges:
+    - min: 1
+      max: 65535
+  fsGroup:
+    rule: MustRunAs
+    ranges:
+    - min: 1
+      max: 65535
+  volumes:
+  - configMap
+  - emptyDir
+  - secret
+  - projected
+  - downwardAPI
+  - persistentVolumeClaim
+{{ end -}}

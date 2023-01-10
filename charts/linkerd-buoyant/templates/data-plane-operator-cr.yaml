@@ -1,0 +1,30 @@
+{{ if (include "install-operator" .) -}}
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: linkerd-data-plane-operator
+  labels:
+    app.kubernetes.io/part-of: buoyant-cloud
+    app.kubernetes.io/component: linkerd-data-plane-operator
+    helm.sh/chart: {{.Chart.Name}}-v{{.Chart.Version | replace "+" "_"}}
+rules:
+- apiGroups: [""]
+  resources: ["events"]
+  # events sent in rapid succession require the patch permission
+  verbs: ["create", "patch"]
+- apiGroups: ["linkerd.buoyant.io"]
+  resources: ["controlplanes", "dataplanes"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["linkerd.buoyant.io"]
+  resources: ["dataplanes/status"]
+  verbs: ["update"]
+- apiGroups: ["apps"]
+  resources: ["deployments", "replicasets", "daemonsets", "statefulsets"]
+  verbs: ["get", "list", "watch", "patch"]
+- apiGroups: [""]
+  resources: ["namespaces", "pods", "configmaps"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["admissionregistration.k8s.io"]
+  resources: ["mutatingwebhookconfigurations"]
+  verbs: ["get", "list", "watch"]
+{{ end -}}

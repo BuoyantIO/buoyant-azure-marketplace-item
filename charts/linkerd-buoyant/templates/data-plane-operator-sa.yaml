@@ -1,0 +1,13 @@
+{{ if (include "install-operator" .) -}}
+kind: ServiceAccount
+apiVersion: v1
+metadata:
+  name: linkerd-data-plane-operator
+  {{- if eq .Release.Service "Buoyant Cloud" }}
+  namespace: {{.Release.Namespace}}
+  {{- end }}
+  labels:
+    app.kubernetes.io/part-of: buoyant-cloud
+    app.kubernetes.io/component: linkerd-data-plane-operator
+    helm.sh/chart: {{.Chart.Name}}-v{{.Chart.Version | replace "+" "_"}}
+{{ end -}}

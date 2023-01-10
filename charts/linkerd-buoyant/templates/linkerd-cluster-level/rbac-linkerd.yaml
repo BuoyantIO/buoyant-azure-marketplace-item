@@ -1,0 +1,362 @@
+{{ if (include "install-operator" .) -}}
+{{ $releaseName := include "linkerd-release-name" . -}}
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: linkerd-{{.Values.linkerd.namespace}}-destination
+  annotations:
+    meta.helm.sh/release-name: {{$releaseName}}
+    meta.helm.sh/release-namespace: {{.Values.linkerd.namespace}}
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-weight: "0"
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    linkerd.io/control-plane-component: destination
+    linkerd.io/control-plane-ns: {{.Values.linkerd.namespace}}
+rules:
+- apiGroups: ["apps"]
+  resources: ["replicasets"]
+  verbs: ["list", "get", "watch"]
+- apiGroups: ["batch"]
+  resources: ["jobs"]
+  verbs: ["list", "get", "watch"]
+- apiGroups: [""]
+  resources: ["pods", "endpoints", "services", "nodes", "namespaces"]
+  verbs: ["list", "get", "watch"]
+- apiGroups: ["linkerd.io"]
+  resources: ["serviceprofiles"]
+  verbs: ["list", "get", "watch"]
+  # backwards-compatibility for 2.10.x and 2.11.x
+- apiGroups: ["split.smi-spec.io"]
+  resources: ["trafficsplits"]
+  verbs: ["list", "get", "watch"]
+- apiGroups: ["discovery.k8s.io"]
+  resources: ["endpointslices"]
+  verbs: ["list", "get", "watch"]
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: linkerd-{{.Values.linkerd.namespace}}-destination
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-weight: "0"
+    meta.helm.sh/release-name: {{$releaseName}}
+    meta.helm.sh/release-namespace: {{.Values.linkerd.namespace}}
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    linkerd.io/control-plane-component: destination
+    linkerd.io/control-plane-ns: {{.Values.linkerd.namespace}}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: linkerd-{{.Values.linkerd.namespace}}-destination
+subjects:
+- kind: ServiceAccount
+  name: linkerd-destination
+  namespace: {{.Values.linkerd.namespace}}
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: linkerd-heartbeat
+  annotations:
+    meta.helm.sh/release-name: {{$releaseName}}
+    meta.helm.sh/release-namespace: {{.Values.linkerd.namespace}}
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-weight: "0"
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    linkerd.io/control-plane-ns: {{.Values.linkerd.namespace}}
+rules:
+- apiGroups: [""]
+  resources: ["namespaces"]
+  verbs: ["list"]
+- apiGroups: ["linkerd.io"]
+  resources: ["serviceprofiles"]
+  verbs: ["list"]
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: linkerd-heartbeat
+  annotations:
+    meta.helm.sh/release-name: {{$releaseName}}
+    meta.helm.sh/release-namespace: {{.Values.linkerd.namespace}}
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-weight: "0"
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    linkerd.io/control-plane-ns: {{.Values.linkerd.namespace}}
+roleRef:
+  kind: ClusterRole
+  name: linkerd-heartbeat
+  apiGroup: rbac.authorization.k8s.io
+subjects:
+- kind: ServiceAccount
+  name: linkerd-heartbeat
+  namespace: {{.Values.linkerd.namespace}}
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: linkerd-{{.Values.linkerd.namespace}}-identity
+  annotations:
+    meta.helm.sh/release-name: {{$releaseName}}
+    meta.helm.sh/release-namespace: {{.Values.linkerd.namespace}}
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-weight: "0"
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    linkerd.io/control-plane-component: identity
+    linkerd.io/control-plane-ns: {{.Values.linkerd.namespace}}
+rules:
+- apiGroups: ["authentication.k8s.io"]
+  resources: ["tokenreviews"]
+  verbs: ["create"]
+- apiGroups: ["apps"]
+  resources: ["deployments"]
+  verbs: ["get"]
+- apiGroups: [""]
+  resources: ["events"]
+  verbs: ["create", "patch"]
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: linkerd-{{.Values.linkerd.namespace}}-identity
+  annotations:
+    meta.helm.sh/release-name: {{$releaseName}}
+    meta.helm.sh/release-namespace: {{.Values.linkerd.namespace}}
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-weight: "0"
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    linkerd.io/control-plane-component: identity
+    linkerd.io/control-plane-ns: {{.Values.linkerd.namespace}}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: linkerd-{{.Values.linkerd.namespace}}-identity
+subjects:
+- kind: ServiceAccount
+  name: linkerd-identity
+  namespace: {{.Values.linkerd.namespace}}
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: linkerd-policy
+  annotations:
+    meta.helm.sh/release-name: {{$releaseName}}
+    meta.helm.sh/release-namespace: {{.Values.linkerd.namespace}}
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-weight: "0"
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: Linkerd
+    linkerd.io/control-plane-component: destination
+    linkerd.io/control-plane-ns: {{.Values.linkerd.namespace}}
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - policy.linkerd.io
+    resources:
+      - authorizationpolicies
+      - httproutes
+      - meshtlsauthentications
+      - networkauthentications
+      - servers
+      - serverauthorizations
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - gateway.networking.k8s.io
+    resources:
+      - httproutes
+    verbs:
+      - list
+      - get
+      - watch
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: linkerd-destination-policy
+  annotations:
+    meta.helm.sh/release-name: {{$releaseName}}
+    meta.helm.sh/release-namespace: {{.Values.linkerd.namespace}}
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-weight: "0"
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: Linkerd
+    linkerd.io/control-plane-component: destination
+    linkerd.io/control-plane-ns: {{.Values.linkerd.namespace}}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: linkerd-policy
+subjects:
+  - kind: ServiceAccount
+    name: linkerd-destination
+    namespace: {{.Values.linkerd.namespace}}
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: linkerd-{{.Values.linkerd.namespace}}-proxy-injector
+  annotations:
+    meta.helm.sh/release-name: {{$releaseName}}
+    meta.helm.sh/release-namespace: {{.Values.linkerd.namespace}}
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-weight: "0"
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    linkerd.io/control-plane-component: proxy-injector
+    linkerd.io/control-plane-ns: {{.Values.linkerd.namespace}}
+rules:
+- apiGroups: [""]
+  resources: ["events"]
+  verbs: ["create", "patch"]
+- apiGroups: [""]
+  resources: ["namespaces", "replicationcontrollers"]
+  verbs: ["list", "get", "watch"]
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["list", "watch"]
+- apiGroups: ["extensions", "apps"]
+  resources: ["deployments", "replicasets", "daemonsets", "statefulsets"]
+  verbs: ["list", "get", "watch"]
+- apiGroups: ["extensions", "batch"]
+  resources: ["cronjobs", "jobs"]
+  verbs: ["list", "get", "watch"]
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: linkerd-{{.Values.linkerd.namespace}}-proxy-injector
+  annotations:
+    meta.helm.sh/release-name: {{$releaseName}}
+    meta.helm.sh/release-namespace: {{.Values.linkerd.namespace}}
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-weight: "0"
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    linkerd.io/control-plane-component: proxy-injector
+    linkerd.io/control-plane-ns: {{.Values.linkerd.namespace}}
+subjects:
+- kind: ServiceAccount
+  name: linkerd-proxy-injector
+  namespace: {{.Values.linkerd.namespace}}
+  apiGroup: ""
+roleRef:
+  kind: ClusterRole
+  name: linkerd-{{.Values.linkerd.namespace}}-proxy-injector
+  apiGroup: rbac.authorization.k8s.io
+---
+#
+# backwards-compatibility for 2.10.x
+#
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: linkerd-{{.Values.linkerd.namespace}}-controller
+  annotations:
+    meta.helm.sh/release-name: {{$releaseName}}
+    meta.helm.sh/release-namespace: {{.Values.linkerd.namespace}}
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-weight: "0"
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    linkerd.io/control-plane-component: controller
+    linkerd.io/control-plane-ns: {{.Values.linkerd.namespace}}
+rules:
+- apiGroups: ["extensions", "apps"]
+  resources: ["daemonsets", "deployments", "replicasets", "statefulsets"]
+  verbs: ["list", "get", "watch"]
+- apiGroups: ["extensions", "batch"]
+  resources: ["cronjobs", "jobs"]
+  verbs: ["list" , "get", "watch"]
+- apiGroups: [""]
+  resources: ["pods", "endpoints", "services", "replicationcontrollers", "namespaces"]
+  verbs: ["list", "get", "watch"]
+- apiGroups: ["linkerd.io"]
+  resources: ["serviceprofiles"]
+  verbs: ["list", "get", "watch"]
+- apiGroups: ["split.smi-spec.io"]
+  resources: ["trafficsplits"]
+  verbs: ["list", "get", "watch"]
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: linkerd-{{.Values.linkerd.namespace}}-controller
+  annotations:
+    meta.helm.sh/release-name: {{$releaseName}}
+    meta.helm.sh/release-namespace: {{.Values.linkerd.namespace}}
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-weight: "0"
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    linkerd.io/control-plane-component: controller
+    linkerd.io/control-plane-ns: {{.Values.linkerd.namespace}}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: linkerd-{{.Values.linkerd.namespace}}-controller
+subjects:
+- kind: ServiceAccount
+  name: linkerd-controller
+  namespace: {{.Values.linkerd.namespace}}
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: linkerd-{{.Values.linkerd.namespace}}-sp-validator
+  annotations:
+    meta.helm.sh/release-name: {{$releaseName}}
+    meta.helm.sh/release-namespace: {{.Values.linkerd.namespace}}
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-weight: "0"
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    linkerd.io/control-plane-component: sp-validator
+    linkerd.io/control-plane-ns: {{.Values.linkerd.namespace}}
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["list"]
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: linkerd-{{.Values.linkerd.namespace}}-sp-validator
+  annotations:
+    meta.helm.sh/release-name: {{$releaseName}}
+    meta.helm.sh/release-namespace: {{.Values.linkerd.namespace}}
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-weight: "0"
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    linkerd.io/control-plane-component: sp-validator
+    linkerd.io/control-plane-ns: {{.Values.linkerd.namespace}}
+subjects:
+- kind: ServiceAccount
+  name: linkerd-sp-validator
+  namespace: {{.Values.linkerd.namespace}}
+  apiGroup: ""
+roleRef:
+  kind: ClusterRole
+  name: linkerd-{{.Values.linkerd.namespace}}-sp-validator
+  apiGroup: rbac.authorization.k8s.io
+{{ end -}}

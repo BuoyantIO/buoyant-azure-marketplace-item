@@ -1,0 +1,113 @@
+#
+# Buoyant Cloud Agent
+#
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: buoyant-cloud-agent
+  {{- if eq .Release.Service "Buoyant Cloud" }}
+  namespace: {{.Release.Namespace}}
+  {{- end }}
+  annotations:
+    buoyant.cloud/is-agent: "true"
+    buoyant.cloud/version: v{{.Chart.Version | replace "+" "_"}}
+    buoyant.cloud/service-name: agent
+  labels:
+    app.kubernetes.io/name: agent
+    app.kubernetes.io/version: v{{.Chart.Version | replace "+" "_"}}
+    app.kubernetes.io/part-of: buoyant-cloud
+    helm.sh/chart: {{.Chart.Name}}-v{{.Chart.Version | replace "+" "_"}}
+    linkerd.io/extension: buoyant
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: buoyant-cloud-agent
+  template:
+    metadata:
+      labels:
+        app: buoyant-cloud-agent
+        {{- with .Values.podLabels}}{{ toYaml . | trim | nindent 8 }}{{- end }}
+      annotations:
+        linkerd.io/inject: enabled
+        config.linkerd.io/default-inbound-policy: all-unauthenticated
+        config.linkerd.io/skip-outbound-ports: "4191,443"
+        {{- with .Values.podAnnotations }}{{ toYaml . | trim | nindent 8 }}{{- end }}
+    spec:
+      securityContext:
+        fsGroup: 65534
+      serviceAccount: buoyant-cloud-agent
+      containers:
+      - name: buoyant-cloud-agent
+        image: "{{ .Values.global.azure.images.agent.registry }}/{{ .Values.global.azure.images.agent.image }}@{{ .Values.global.azure.images.agent.digest }}"
+        args:
+        - "agent"
+        - "-grpc-addr={{ .Values.agent.apiAddress }}"
+        - "-log-level={{ .Values.agent.logLevel }}"
+        - "-api-addr={{ .Values.api.apiAddress }}"
+        - "-agent-id=$(AGENT_ID)"
+        {{- if .Values.agent.noTLS }}
+        - "-no-tls"
+        {{- end }}
+        env:
+        - name: BUOYANT_CLOUD_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              key: client_id
+              name: buoyant-cloud-org-credentials
+        - name: BUOYANT_CLOUD_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              key: client_secret
+              name: buoyant-cloud-org-credentials
+        - name: AGENT_ID
+          valueFrom:
+            configMapKeyRef:
+              key: agent_id
+              name: agent-metadata
+        ports:
+        - name: admin
+          containerPort: 9990
+        livenessProbe:
+          httpGet:
+            path: /ping
+            port: 9990
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 9990
+        resources:
+          requests:
+            cpu: 10m
+            memory: 10Mi
+          limits:
+            cpu: "2"
+            memory: 5000Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsGroup: 65534
+          runAsNonRoot: true
+          runAsUser: 65534
+      initContainers:
+      - name: buoyant-cloud-agent-registrator
+        image: "{{ .Values.global.azure.images.agent.registry }}/{{ .Values.global.azure.images.agent.image }}@{{ .Values.global.azure.images.agent.digest }}"
+        args:
+        - "registrator"
+        - "-log-level={{ .Values.agent.logLevel }}"
+        - "-api-addr={{ .Values.api.apiAddress }}"
+        {{- if .Values.agent.noTLS }}
+        - "-no-tls"
+        {{- end }}
+        env:
+        - name: BUOYANT_CLOUD_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              key: client_id
+              name: buoyant-cloud-org-credentials
+        - name: BUOYANT_CLOUD_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              key: client_secret
+              name: buoyant-cloud-org-credentials

@@ -1,0 +1,36 @@
+{{ if and (include "install-operator" .) .Values.controlPlaneOperator.extendedRBAC.enabled -}}
+# Allows changing the Helm annotations in Linkerd's cluster-wide resources
+{{- /* Sync with operator/pkg/migrations/migrator/rule.go */}}
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: linkerd-control-plane-operator-extended
+  labels:
+    app.kubernetes.io/part-of: buoyant-cloud
+    app.kubernetes.io/component: linkerd-control-plane-operator
+    helm.sh/chart: {{.Chart.Name}}-v{{.Chart.Version | replace "+" "_"}}
+rules:
+- apiGroups: [""]
+  resources: ["namespaces"]
+  resourceNames:
+  - {{.Values.linkerd.namespace}}
+  verbs: ["get", "update"]
+- apiGroups: ["policy", "extensions"]
+  resources: ["podsecuritypolicies"]
+  resourceNames:
+  - linkerd-{{.Values.linkerd.namespace}}-control-plane
+  verbs: ["get", "update", "patch"]
+- apiGroups: ["admissionregistration.k8s.io"]
+  resources: ["mutatingwebhookconfigurations"]
+  verbs: ["get", "update"]
+- apiGroups: ["rbac.authorization.k8s.io"]
+  resources: ["clusterroles", "clusterrolebindings"]
+  resourceNames:
+  - linkerd-{{.Values.linkerd.namespace}}-destination
+  - linkerd-{{.Values.linkerd.namespace}}-identity
+  - linkerd-{{.Values.linkerd.namespace}}-proxy-injector
+  - linkerd-policy
+  - linkerd-destination-policy
+  - linkerd-heartbeat
+  verbs: ["get", "update", "escalate", "bind"]
+{{ end -}}

@@ -1,0 +1,41 @@
+{{ if (include "install-operator" .) -}}
+# Allows the operator to update cluster-wide Linkerd resources
+{{- /* Sync with operator/pkg/migrations/migrator/rule.go */}}
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: linkerd-control-plane-operator
+  labels:
+    app.kubernetes.io/part-of: buoyant-cloud
+    app.kubernetes.io/component: linkerd-control-plane-operator
+    helm.sh/chart: {{.Chart.Name}}-v{{.Chart.Version | replace "+" "_"}}
+rules:
+- apiGroups: [""]
+  resources: ["namespaces"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["list", "watch"]
+- apiGroups: [""]
+  resources: ["events"]
+  # events sents in rapid succession require the patch permission
+  verbs: ["create", "patch"]
+- apiGroups: ["linkerd.buoyant.io"]
+  resources: ["controlplanes", "dataplanes"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["linkerd.buoyant.io"]
+  resources: ["controlplanes/status"]
+  verbs: ["update"]
+- apiGroups: ["apiextensions.k8s.io"]
+  resources: ["customresourcedefinitions"]
+  verbs: ["get", "patch", "update", "create"]
+- apiGroups: ["admissionregistration.k8s.io"]
+  resources: ["mutatingwebhookconfigurations", "validatingwebhookconfigurations"]
+  verbs: ["get", "list", "watch", "patch", "update", "create"]
+- apiGroups: ["policy", "extensions"]
+  resources: ["podsecuritypolicies"]
+  verbs: ["get"]
+- apiGroups: ["rbac.authorization.k8s.io"]
+  resources: ["clusterroles", "clusterrolebindings"]
+  verbs: ["get"]
+{{ end -}}

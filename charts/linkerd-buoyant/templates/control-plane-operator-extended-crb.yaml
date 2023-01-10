@@ -1,0 +1,18 @@
+{{ if and (include "install-operator" .) .Values.controlPlaneOperator.extendedRBAC.enabled -}}
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: linkerd-control-plane-operator-extended
+  labels:
+    app.kubernetes.io/part-of: buoyant-cloud
+    app.kubernetes.io/component: linkerd-control-plane-operator
+    helm.sh/chart: {{.Chart.Name}}-v{{.Chart.Version | replace "+" "_"}}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: linkerd-control-plane-operator-extended
+subjects:
+- kind: ServiceAccount
+  name: linkerd-control-plane-operator
+  namespace: {{.Release.Namespace}}
+{{ end -}}
