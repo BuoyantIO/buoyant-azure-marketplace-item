@@ -4,22 +4,21 @@ global:
     billingIdentifier: DONOTMODIFY
     images:
       agent:
-        # tag: stable-2.12.2
         digest: sha256:680d5557ccacd3536d6b30297f293f292e49822007868e93b02fdeecccc1c18c
         image: linkerd-buoyant
-        registry: ghcr.io/buoyantio/
+        registry: ghcr.io/buoyantio
       metrics:
         digest: sha256:44198d3143d7e66ea318c09f9de6d69143a2f90069adb6e1f6cc133697470004
         image: metrics-agent:v0.29.0
-        registry: ghcr.io/buoyantio/
+        registry: ghcr.io/buoyantio
       bash:
         digest: sha256:2d4fbf1ca5d2b949f6263a1a10bd4a5813eb385418c186681c21839d85491601
         image: bash:4.0.44
-        registry: ghcr.io/buoyantio/
+        registry: ghcr.io/buoyantio
       curl:
         digest: sha256:d588ff348c251f8e4d1b2053125c34d719a98ff3ef20895c49684b3743995073
         image: curl
-        registry: ghcr.io/buoyantio/
+        registry: ghcr.io/buoyantio
 ##
 
 agent:

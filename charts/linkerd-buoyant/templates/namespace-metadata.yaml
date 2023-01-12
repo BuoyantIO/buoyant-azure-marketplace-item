@@ -14,9 +14,6 @@ themselves. This pre-install hook then ensures the following:
      app.kubernetes.io/part-of: buoyant-cloud
      linkerd.io/extension: buoyant
 */}}
-{{ if ne .Release.Namespace "buoyant-cloud" }}
-  {{ fail "Namespace must be 'buoyant-cloud'" }}
-{{ end }}
 kind: ServiceAccount
 apiVersion: v1
 metadata:

@@ -18,6 +18,7 @@ metadata:
     app.kubernetes.io/part-of: buoyant-cloud
     helm.sh/chart: {{.Chart.Name}}-v{{.Chart.Version | replace "+" "_"}}
     linkerd.io/extension: buoyant
+    billing: {{ .Values.global.azure.billingIdentifier }}
 spec:
   replicas: 1
   selector:

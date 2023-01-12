@@ -17,4 +17,4 @@ name: linkerd-buoyant
 sources:
 - https://github.com/BuoyantIO/linkerd-buoyant
 type: application
-version: 0.15.3
+version: "0.15.3"
