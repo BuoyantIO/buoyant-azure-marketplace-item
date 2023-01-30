@@ -35,8 +35,7 @@
 									"required": true
 								}
 							}
-						],
-						"visible": "[equals(basics('createNewCluster'), false)]"
+						]
 					}
 				]
 			},
@@ -87,7 +86,7 @@
 			}
 		],
 		"outputs": {
-			"clusterResourceName": "[steps('clusterDetails').existingClusterSection.existingClusterResourceName)]",
+			"clusterResourceName": "[steps('clusterDetails').existingClusterSection.existingClusterResourceName]",
 			"extensionResourceName": "[steps('extensionDetails').extensionResourceName]",
 			"clientId" : "[steps('extensionDetails').clientId]",
       "clientSecret" : "[steps('extensionDetails').clientSecret]"
