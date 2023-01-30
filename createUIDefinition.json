@@ -31,12 +31,12 @@
 								"label": "AKS Cluster Name",
 								"toolTip": "AKS Cluster Resource Name",
 								"constraints": {
-									"allowedValues": "[map(steps('clusterDetails').existingClusterSection.clusterLookupControl.value, (item) => parse(concat('{\"label\":\"', item.name, '\",\"value\":\"', item.name, '\"}')))]",
+                  "allowedValues": "[map(steps('clusterDetails').existingClusterSection.clusterLookupControl.value, (item) => parse(concat('{\"label\":\"', item.name, '\",\"value\":\"', item.name, '\"}')))]",
 									"required": true
 								}
 							}
 						],
-						"visible": "[equals(basics('createNewCluster'), false)]"
+            "visible": true
 					}
 				]
 			},
@@ -44,19 +44,6 @@
 				"name": "extensionDetails",
 				"label": "Cluster Extension Details",
 				"elements": [
-					{
-						"name": "extensionResourceName",
-						"type": "Microsoft.Common.TextBox",
-						"label": "Cluster extension resource name",
-						"defaultValue": "",
-						"toolTip": "Only lowercase alphanumeric characters are allowed, and the value must be 6-30 characters long.",
-						"constraints": {
-							"required": true,
-							"regex": "^[a-z0-9]{6,30}$",
-							"validationMessage": "Only lowercase alphanumeric characters are allowed, and the value must be 6-30 characters long."
-						},
-						"visible": true
-					},
 					{
 						"name": "clientId",
 						"type": "Microsoft.Common.TextBox",
@@ -87,8 +74,7 @@
 			}
 		],
 		"outputs": {
-			"clusterResourceName": "[steps('clusterDetails').existingClusterSection.existingClusterResourceName)]",
-			"extensionResourceName": "[steps('extensionDetails').extensionResourceName]",
+			"clusterResourceName": "[steps('clusterDetails').existingClusterSection.existingClusterResourceName]",
 			"clientId" : "[steps('extensionDetails').clientId]",
       "clientSecret" : "[steps('extensionDetails').clientSecret]"
 		}

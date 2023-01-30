@@ -2,12 +2,6 @@
     "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-        "extensionResourceName": {
-            "type": "string",
-            "metadata": {
-                "description": "The name of the extension."
-            }
-        },
         "clusterResourceName": {
             "type": "String",
             "metadata": {
@@ -38,7 +32,7 @@
         {
             "type": "Microsoft.KubernetesConfiguration/extensions",
             "apiVersion": "2022-04-02-preview",
-            "name": "[parameters('extensionResourceName')]",
+            "name": "buoyant-cloud",
             "dependsOn": [
                 "[resourceId('Microsoft.ContainerService/managedClusters/', parameters('clusterResourceName'))]"
             ],

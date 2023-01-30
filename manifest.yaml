@@ -1,7 +1,7 @@
 applicationName: com.buoyant.buoyant-cloud
 publisher: "Buoyant Inc"
 description: "Install the Buoyant Cloud Linkerd extension"
-version: 0.1.1 #Must be semver
+version: 0.1.2 #Must be semver
 helmChart: "./charts/linkerd-buoyant"
 clusterArmTemplate: "./mainTemplate.json"
 uiDefinition: "./createUIDefinition.json"
